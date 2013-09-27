@@ -511,7 +511,10 @@ namespace MonoDevelop.NUnit
 						}
 
 						bool macunitStyle = doc.Root.Element ("environment") != null && doc.Root.Element ("environment").Attribute ("macunit-version") != null;
-						return ReportXmlResult (localMonitor, root, "", macunitStyle);
+						var result = ReportXmlResult (localMonitor, root, "", macunitStyle);
+						if (!string.IsNullOrEmpty (testName))
+							result = localMonitor.SingleTestResult;
+						return result;
 					}
 				}
 				throw new Exception ("Test results could not be parsed.");
