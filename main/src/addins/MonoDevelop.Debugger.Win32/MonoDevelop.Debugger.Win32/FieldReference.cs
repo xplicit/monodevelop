@@ -39,21 +39,27 @@ namespace MonoDevelop.Debugger.Win32
 		readonly CorValRef thisobj;
 		readonly CorValRef.ValueLoader loader;
 		readonly ObjectValueFlags flags;
+		readonly string vname;
 
-		public FieldReference (EvaluationContext ctx, CorValRef thisobj, CorType type, FieldInfo field)
-			: base (ctx)
+		public FieldReference (EvaluationContext ctx, CorValRef thisobj, CorType type, FieldInfo field, string vname, ObjectValueFlags vflags) : base (ctx)
 		{
 			this.thisobj = thisobj;
 			this.type = type;
 			this.field = field;
+			this.vname = vname;
 			if (field.IsStatic)
 				this.thisobj = null;
 
-			flags = GetFlags (field);
+			flags = vflags | GetFlags (field);
 
 			loader = delegate {
 				return ((CorValRef)Value).Val;
 			};
+		}
+
+		public FieldReference (EvaluationContext ctx, CorValRef thisobj, CorType type, FieldInfo field)
+			: this (ctx, thisobj, type, field, null, ObjectValueFlags.Field)
+		{
 		}
 		
 		public override object Type {
@@ -78,25 +84,23 @@ namespace MonoDevelop.Debugger.Win32
 
 		public override object Value {
 			get {
-				CorEvaluationContext ctx = (CorEvaluationContext) Context;
+				var ctx = (CorEvaluationContext) Context;
+
 				if (thisobj != null && !field.IsStatic) {
 					CorObjectValue cval = (CorObjectValue) CorObjectAdaptor.GetRealObject (ctx, thisobj);
-					CorValue val = cval.GetFieldValue (type.Class, field.MetadataToken);
-					return new CorValRef (val, loader);
+					return new CorValRef (cval.GetFieldValue (type.Class, field.MetadataToken), loader);
 				}
-				else {
-					if (field.IsLiteral && field.IsStatic) {
-						object oval = field.GetValue (null);
-						CorObjectAdaptor ad = ctx.Adapter;
-						// When getting enum members, convert the integer value to an enum value
-						if (ad.IsEnum (ctx, type))
-							return ad.CreateEnum (ctx, type, Context.Adapter.CreateValue (ctx, oval));
 
-						return Context.Adapter.CreateValue (ctx, oval);
-					}
-					CorValue val = type.GetStaticFieldValue (field.MetadataToken, ctx.Frame);
-					return new CorValRef (val, loader);
+				if (field.IsLiteral && field.IsStatic) {
+					object oval = field.GetValue (null);
+					CorObjectAdaptor ad = ctx.Adapter;
+					// When getting enum members, convert the integer value to an enum value
+					if (ad.IsEnum (ctx, type))
+						return ad.CreateEnum (ctx, type, Context.Adapter.CreateValue (ctx, oval));
+
+					return Context.Adapter.CreateValue (ctx, oval);
 				}
+				return new CorValRef (type.GetStaticFieldValue (field.MetadataToken, ctx.Frame), loader);
 			}
 			set {
 				((CorValRef)Value).SetValue (Context, (CorValRef) value);
@@ -111,7 +115,7 @@ namespace MonoDevelop.Debugger.Win32
 
 		public override string Name {
 			get {
-				return field.Name;
+				return vname ?? field.Name;
 			}
 		}
 

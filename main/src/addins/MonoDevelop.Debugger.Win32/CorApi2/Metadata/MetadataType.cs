@@ -445,6 +445,8 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 					var prop = new MetadataPropertyInfo (m_importer, methodToken, this);
 					try {
 						MethodInfo mi = prop.GetGetMethod () ?? prop.GetSetMethod ();
+						if (mi == null)
+							continue;
 						if (MetadataExtensions.TypeFlagsMatch (mi.IsPublic, mi.IsStatic, bindingAttr))
 							al.Add (prop);
 					}

@@ -109,10 +109,18 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 		public override MethodInfo GetGetMethod (bool nonPublic)
 		{
 			if (m_getter == null) {
-				if (m_pmdGetter != 0)
-					m_getter = new MetadataMethodInfo (m_importer, m_pmdGetter);
+				if (m_pmdGetter != 0) {
+					try {
+						m_getter = new MetadataMethodInfo (m_importer, m_pmdGetter);
+					} catch (ArgumentException) {
+						m_pmdGetter = 0;
+						return null;
+					}
+				}
 			}
-			return m_getter;
+			if (nonPublic || m_getter.IsPublic)
+				return m_getter;
+			return null;
 		}
 
 		public override ParameterInfo[] GetIndexParameters ( )
@@ -126,10 +134,18 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 		public override MethodInfo GetSetMethod (bool nonPublic)
 		{
 			if (m_setter == null) {
-				if (m_pmdSetter != 0)
-					m_setter = new MetadataMethodInfo (m_importer, m_pmdSetter);
+				if (m_pmdSetter != 0) {
+					try {
+						m_setter = new MetadataMethodInfo (m_importer, m_pmdSetter);
+					} catch (ArgumentException) {
+						m_pmdSetter = 0;
+						return null;
+					}
+				}
 			}
-			return m_setter;
+			if (nonPublic || m_setter.IsPublic)
+				return m_setter;
+			return null;
 		}
 
 		public override object GetValue (object obj, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)

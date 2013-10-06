@@ -94,9 +94,19 @@ namespace MonoDevelop.Debugger.Win32
 			return ((CorType)type).Type == CorElementType.ELEMENT_TYPE_VALUETYPE;
 		}
 
-		public override bool IsClass (object type)
+		public override bool IsClass (EvaluationContext ctx, object type)
 		{
-			return ((CorType)type).Type == CorElementType.ELEMENT_TYPE_CLASS && ((CorType)type).Class != null;
+			var t = (CorType) type;
+			var cctx = (CorEvaluationContext)ctx;
+			Type tt;
+			// Primitive check
+			if (MetadataHelperFunctionsExtensions.CoreTypes.TryGetValue (t.Type, out tt))
+				return false;
+
+			if (IsIEnumerable (t, cctx.Session))
+				return false;
+
+			return (t.Type == CorElementType.ELEMENT_TYPE_CLASS && t.Class != null) || IsValueType (t);
 		}
 
 		public override bool IsGenericType (EvaluationContext ctx, object type)
@@ -1030,7 +1040,7 @@ namespace MonoDevelop.Debugger.Win32
 					// This way we avoid overhead of invoking methods on the debugee when the value is requested.
 					string cgFieldName = string.Format ("<{0}>{1}", prop.Name, IsAnonymousType (tt) ? "" : "k__BackingField");
 					if ((field = FindByName (tt.GetFields (), f => f.Name, cgFieldName, true)) != null && IsCompilerGenerated (field))
-						return new FieldReference (ctx, co as CorValRef, type, field); // FIXME: Support other types
+						return new FieldReference (ctx, co as CorValRef, type, field, prop.Name, ObjectValueFlags.Property);
 
 					// Backing field not available, so do things the old fashioned way.
 					MethodInfo getter = prop.GetGetMethod (true);
@@ -1048,9 +1058,6 @@ namespace MonoDevelop.Debugger.Win32
 
 		static bool IsIEnumerable (Type type)
 		{
-			if (!type.IsInterface)
-				return false;
-
 			if (type.Namespace == "System.Collections" && type.Name == "IEnumerable")
 				return true;
 
@@ -1315,9 +1322,9 @@ namespace MonoDevelop.Debugger.Win32
 
 		protected override TypeDisplayData OnGetTypeDisplayData (EvaluationContext ctx, object gtype)
 		{
-			CorType type = (CorType) gtype;
+			var type = (CorType) gtype;
 
-			CorEvaluationContext wctx = (CorEvaluationContext) ctx;
+			var wctx = (CorEvaluationContext) ctx;
 			Type t = type.GetTypeInfo (wctx.Session);
 			if (t == null)
 				return null;
