@@ -324,10 +324,10 @@ namespace MonoDevelop.Debugger.Win32
 			CorArrayValue array = CorObjectAdaptor.GetRealObject (ctx, arr) as CorArrayValue;
 			
 			ArrayAdaptor realArr = new ArrayAdaptor (ctx, arr, array);
-			realArr.SetElement (new int[] { 0 }, val);
+			realArr.SetElement (new [] { 0 }, val);
 			
 			CorType at = (CorType) GetType (ctx, "System.Array");
-			object[] argTypes = new object[] { GetType (ctx, "System.Int32") };
+			object[] argTypes = { GetType (ctx, "System.Int32") };
 			return (CorValRef)RuntimeInvoke (ctx, at, arr, "GetValue", argTypes, new object[] { CreateValue (ctx, 0) });
 		}
 
@@ -638,8 +638,8 @@ namespace MonoDevelop.Debugger.Win32
 		{
 			object systemEnumType = GetType (ctx, "System.Enum");
 			object enumType = CreateTypeObject (ctx, type);
-			object[] argTypes = new object[] { GetValueType (ctx, enumType), GetValueType (ctx, val) };
-			object[] args = new object[] { enumType, val };
+			object[] argTypes = { GetValueType (ctx, enumType), GetValueType (ctx, val) };
+			object[] args = { enumType, val };
 			return RuntimeInvoke (ctx, systemEnumType, null, "ToObject", argTypes, args);
 		}
 
@@ -713,9 +713,8 @@ namespace MonoDevelop.Debugger.Win32
 			CorValue val = CorObjectAdaptor.GetRealObject (ctx, arr);
 			
 			if (val is CorArrayValue)
-				return new ArrayAdaptor (ctx, (CorValRef) arr, (CorArrayValue) val);
-			else
-				return null;
+				return new ArrayAdaptor (ctx, (CorValRef)arr, (CorArrayValue)val);
+			return null;
 		}
 		
 		public override IStringAdaptor CreateStringAdaptor (EvaluationContext ctx, object str)
@@ -723,9 +722,8 @@ namespace MonoDevelop.Debugger.Win32
 			CorValue val = CorObjectAdaptor.GetRealObject (ctx, str);
 			
 			if (val is CorStringValue)
-				return new StringAdaptor (ctx, (CorValRef) str, (CorStringValue) val);
-			else
-				return null;
+				return new StringAdaptor (ctx, (CorValRef)str, (CorStringValue)val);
+			return null;
 		}
 
 		public static CorValue GetRealObject (EvaluationContext cctx, object objr)
@@ -920,7 +918,7 @@ namespace MonoDevelop.Debugger.Win32
 			if (gval != null && (bindingFlags & BindingFlags.Instance) != 0)
 				realType = GetValueType (ctx, gval) as CorType;
 
-			if (t.Class == null)
+			if (t.Type == CorElementType.ELEMENT_TYPE_CLASS && t.Class == null)
 				yield break;
 
 			CorEvaluationContext cctx = (CorEvaluationContext) ctx;
@@ -1120,6 +1118,7 @@ namespace MonoDevelop.Debugger.Win32
 					type = type.Base;
 			}
 
+			type = vr.Type as CorType;
 			t = type.GetTypeInfo (cctx.Session);
 			foreach (var iface in t.GetInterfaces ()) {
 				if (!isEnumerable && IsIEnumerable (iface)) {

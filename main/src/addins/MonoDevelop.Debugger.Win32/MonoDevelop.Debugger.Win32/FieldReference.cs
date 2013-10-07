@@ -85,10 +85,19 @@ namespace MonoDevelop.Debugger.Win32
 		public override object Value {
 			get {
 				var ctx = (CorEvaluationContext) Context;
-
+				CorValue val;
 				if (thisobj != null && !field.IsStatic) {
-					CorObjectValue cval = (CorObjectValue) CorObjectAdaptor.GetRealObject (ctx, thisobj);
-					return new CorValRef (cval.GetFieldValue (type.Class, field.MetadataToken), loader);
+					CorObjectValue cval;
+					val = CorObjectAdaptor.GetRealObject (ctx, thisobj);
+					if (val is CorObjectValue) {
+						cval = (CorObjectValue)val;
+						val = cval.GetFieldValue (type.Class, field.MetadataToken);
+						return new CorValRef (val, loader);
+					}
+					else if (val is CorReferenceValue) {
+						CorReferenceValue rval = (CorReferenceValue)val;
+						return new CorValRef (val, loader);
+					}
 				}
 
 				if (field.IsLiteral && field.IsStatic) {
@@ -100,7 +109,8 @@ namespace MonoDevelop.Debugger.Win32
 
 					return Context.Adapter.CreateValue (ctx, oval);
 				}
-				return new CorValRef (type.GetStaticFieldValue (field.MetadataToken, ctx.Frame), loader);
+				val = type.GetStaticFieldValue (field.MetadataToken, ctx.Frame);
+				return new CorValRef (val, loader);
 			}
 			set {
 				((CorValRef)Value).SetValue (Context, (CorValRef) value);

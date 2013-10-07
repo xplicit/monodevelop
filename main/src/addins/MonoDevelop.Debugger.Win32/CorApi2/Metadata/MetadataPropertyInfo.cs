@@ -84,6 +84,12 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 			m_propAttributes = (PropertyAttributes) pdwPropFlags;
 			m_name = szProperty.ToString ();
 			MetadataHelperFunctionsExtensions.GetCustomAttribute (importer, propertyToken, typeof (System.Diagnostics.DebuggerBrowsableAttribute));
+
+			if (!m_importer.IsValidToken ((uint)m_pmdGetter))
+				m_pmdGetter = 0;
+
+			if (!m_importer.IsValidToken ((uint)m_pmdSetter))
+				m_pmdSetter = 0;
 		}
 
 		public override PropertyAttributes Attributes
@@ -108,16 +114,12 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 
 		public override MethodInfo GetGetMethod (bool nonPublic)
 		{
-			if (m_getter == null) {
-				if (m_pmdGetter != 0) {
-					try {
-						m_getter = new MetadataMethodInfo (m_importer, m_pmdGetter);
-					} catch (ArgumentException) {
-						m_pmdGetter = 0;
-						return null;
-					}
-				}
-			}
+			if (m_pmdGetter == 0)
+				return null;
+
+			if (m_getter == null)
+				m_getter = new MetadataMethodInfo (m_importer, m_pmdGetter);
+
 			if (nonPublic || m_getter.IsPublic)
 				return m_getter;
 			return null;
@@ -133,16 +135,12 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 
 		public override MethodInfo GetSetMethod (bool nonPublic)
 		{
-			if (m_setter == null) {
-				if (m_pmdSetter != 0) {
-					try {
-						m_setter = new MetadataMethodInfo (m_importer, m_pmdSetter);
-					} catch (ArgumentException) {
-						m_pmdSetter = 0;
-						return null;
-					}
-				}
-			}
+			if (m_pmdSetter == 0)
+				return null;
+
+			if (m_setter == null)
+				m_setter = new MetadataMethodInfo (m_importer, m_pmdSetter);
+
 			if (nonPublic || m_setter.IsPublic)
 				return m_setter;
 			return null;

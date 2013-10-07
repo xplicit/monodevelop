@@ -510,7 +510,11 @@ namespace Microsoft.Samples.Debugging.CorMetadata
 
         public override FieldInfo GetField(String name, BindingFlags bindingAttr)
         {
-            throw new NotImplementedException();
+			foreach (var field in GetFields (bindingAttr)) {
+				if (field.Name == name)
+					return field;
+			}
+			return null;
         }
 
         public override FieldInfo[] GetFields(BindingFlags bindingAttr)
