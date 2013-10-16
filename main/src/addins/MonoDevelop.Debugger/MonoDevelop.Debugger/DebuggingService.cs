@@ -215,12 +215,11 @@ namespace MonoDevelop.Debugger
 			MessageService.ShowCustomDialog (dlg);
 		}
 		
-		public static bool ShowBreakpointProperties (Breakpoint bp, bool editNew)
+		public static bool ShowBreakpointProperties (ref BreakEvent bp)
 		{
-			var dlg = new BreakpointPropertiesDialog (bp, editNew);
-			if (MessageService.ShowCustomDialog (dlg) == (int) Gtk.ResponseType.Ok)
-				return true;
-			return false;
+			using (var dlg = new BreakpointPropertiesDialog2 (ref bp)) {
+				return dlg.Run () == Xwt.Command.Ok;
+			}
 		}
 		
 		public static void ShowAddTracepointDialog (string file, int line)
