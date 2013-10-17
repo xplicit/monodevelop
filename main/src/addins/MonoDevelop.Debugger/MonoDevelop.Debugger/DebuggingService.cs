@@ -217,8 +217,11 @@ namespace MonoDevelop.Debugger
 		
 		public static bool ShowBreakpointProperties (ref BreakEvent bp)
 		{
-			using (var dlg = new BreakpointPropertiesDialog2 (ref bp)) {
-				return dlg.Run () == Xwt.Command.Ok;
+			using (var dlg = new BreakpointPropertiesDialog2 (bp)) {
+				Xwt.Command response = dlg.Run ();
+				if (bp == null)
+					bp = dlg.GetBreakEvent ();
+				return response == Xwt.Command.Ok;
 			}
 		}
 		

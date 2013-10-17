@@ -557,12 +557,10 @@ namespace MonoDevelop.Debugger
 		{
 			BreakEvent bp = null;
 			if (DebuggingService.ShowBreakpointProperties (ref bp)) {
-				if (bp is Breakpoint) {
-					var breakpoints = DebuggingService.Breakpoints;
+				var breakpoints = DebuggingService.Breakpoints;
 
-					lock (breakpoints)
-						breakpoints.Add (bp);
-				}
+				lock (breakpoints)
+					breakpoints.Add (bp);
 			}
 		}
 		

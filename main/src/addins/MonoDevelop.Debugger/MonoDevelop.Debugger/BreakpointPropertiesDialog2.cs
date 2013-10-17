@@ -28,6 +28,9 @@ using Mono.Debugging.Client;
 using MonoDevelop.Core;
 using MonoDevelop.Projects;
 using MonoDevelop.Ide;
+using System.Collections.Generic;
+using MonoDevelop.Ide.TypeSystem;
+using ICSharpCode.NRefactory.TypeSystem;
 
 namespace MonoDevelop.Debugger
 {
@@ -80,11 +83,13 @@ namespace MonoDevelop.Debugger
 		BreakEvent be;
 		string[] parsedParamTypes;
 		string parsedFunction;
+		readonly HashSet<string> classes = new HashSet<string> ();
 
-		public BreakpointPropertiesDialog2 (ref BreakEvent be)
+		public BreakpointPropertiesDialog2 (BreakEvent be)
 		{
 			this.be = be;
 
+			LoadExceptionList ();
 			Initialize ();
 			SetInitialData ();
 			SetLayout ();
@@ -174,7 +179,7 @@ namespace MonoDevelop.Debugger
 
 		void SetInitialCatchpointData (Catchpoint cp)
 		{
-
+			entryExceptionType.Text = cp.ExceptionName;
 		}
 
 		void SetInitialData ()
@@ -186,6 +191,7 @@ namespace MonoDevelop.Debugger
 				entryLocationFile.ReadOnly = true;
 				entryLocationLine.ReadOnly = true;
 				entryLocationColumn.ReadOnly = true;
+				entryExceptionType.ReadOnly = true;
 
 				ignoreHitType.SelectedItem = be.HitCountMode;
 				ignoreHitCount.Value = be.HitCount;
@@ -218,12 +224,10 @@ namespace MonoDevelop.Debugger
 				SetInitialCatchpointData (cp);
 		}
 
-		void SaveFunctionBreakpoint (FunctionBreakpoint fb, bool isNew)
+		void SaveFunctionBreakpoint (FunctionBreakpoint fb)
 		{
-			if (isNew) {
-				fb.FunctionName = parsedFunction;
-				fb.ParamTypes = parsedParamTypes;
-			}
+			fb.FunctionName = parsedFunction;
+			fb.ParamTypes = parsedParamTypes;
 		}
 
 		void SaveBreakpoint (Breakpoint bp, bool isNew)
@@ -240,9 +244,13 @@ namespace MonoDevelop.Debugger
 				bp.ConditionExpression = null;
 		}
 
-		void SaveCatchpoint (Catchpoint cp, bool isNew)
+		void SaveCatchpoint (Catchpoint cp)
 		{
-
+			if (checkIncludeSubclass.Active) {
+				// add stuff
+			} else {
+				// remove stuff
+			}
 		}
 
 		void OnSave (object sender, EventArgs e)
@@ -263,7 +271,7 @@ namespace MonoDevelop.Debugger
 
 			var fb = be as FunctionBreakpoint;
 			if (fb != null)
-				SaveFunctionBreakpoint (fb, isNew);
+				SaveFunctionBreakpoint (fb);
 
 			var bp = be as Breakpoint;
 			if (bp != null)
@@ -271,7 +279,7 @@ namespace MonoDevelop.Debugger
 
 			var cp = be as Catchpoint;
 			if (cp != null)
-				SaveCatchpoint (cp, isNew);
+				SaveCatchpoint (cp);
 
 			be.HitCountMode = (HitCountMode)ignoreHitType.SelectedItem;
 			be.HitCount = be.HitCountMode != HitCountMode.None ? (int)ignoreHitCount.Value : 0;
@@ -361,15 +369,17 @@ namespace MonoDevelop.Debugger
 					}
 				}
 			} else if (be is Catchpoint) {
-
+				if (!classes.Contains (entryExceptionType.Text)) {
+					warningException.Show ();
+					warningException.TooltipText = GettextCatalog.GetString ("Exception not identified");
+					return false;
+				}
 			}
 
 			warningFunction.Hide ();
 			warningLocation.Hide ();
 			warningException.Hide ();
 			warningCondition.Hide ();
-
-			// Implement catchpoint
 
 			return true;
 		}
@@ -402,6 +412,30 @@ namespace MonoDevelop.Debugger
 			}
 
 			return true;
+		}
+
+		void LoadExceptionList ()
+		{
+			classes.Add ("System.Exception");
+			if (IdeApp.ProjectOperations.CurrentSelectedProject != null) {
+				var dom = TypeSystemService.GetCompilation (IdeApp.ProjectOperations.CurrentSelectedProject);
+				foreach (var t in dom.FindType (typeof (Exception)).GetSubTypeDefinitions ())
+					classes.Add (t.ReflectionName);
+			} else {
+				// no need to unload this assembly context, it's not cached.
+				var unresolvedAssembly = TypeSystemService.LoadAssemblyContext (Runtime.SystemAssemblyService.CurrentRuntime, MonoDevelop.Core.Assemblies.TargetFramework.Default, typeof(Uri).Assembly.Location);
+				var mscorlib = TypeSystemService.LoadAssemblyContext (Runtime.SystemAssemblyService.CurrentRuntime, MonoDevelop.Core.Assemblies.TargetFramework.Default, typeof(object).Assembly.Location);
+				if (unresolvedAssembly != null && mscorlib != null) {
+					var dom = new ICSharpCode.NRefactory.TypeSystem.Implementation.SimpleCompilation (unresolvedAssembly, mscorlib);
+					foreach (var t in dom.FindType (typeof (Exception)).GetSubTypeDefinitions ())
+						classes.Add (t.ReflectionName);
+				}
+			}
+		}
+
+		public BreakEvent GetBreakEvent ()
+		{
+			return be;
 		}
 
 		void SetLayout ()
