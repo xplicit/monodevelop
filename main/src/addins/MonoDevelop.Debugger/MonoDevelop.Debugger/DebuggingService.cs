@@ -225,20 +225,6 @@ namespace MonoDevelop.Debugger
 			}
 		}
 		
-		public static void ShowAddTracepointDialog (string file, int line)
-		{
-			AddTracePointDialog dlg = new AddTracePointDialog ();
-			if (MessageService.RunCustomDialog (dlg) == (int) Gtk.ResponseType.Ok && dlg.Text.Length > 0) {
-				Breakpoint bp = new Breakpoint (file, line);
-				bp.HitAction = HitAction.PrintExpression;
-				bp.TraceExpression = dlg.Text;
-				bp.ConditionExpression = dlg.Condition;
-				lock (breakpoints)
-					breakpoints.Add (bp);
-			}
-			dlg.Destroy ();
-		}
-		
 		public static void AddWatch (string expression)
 		{
 			Pad pad = IdeApp.Workbench.GetPad<WatchPad> ();
