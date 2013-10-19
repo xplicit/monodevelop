@@ -116,7 +116,6 @@
     <Compile Include="MonoDevelop.Debugger\DebugCommands.cs" />
     <Compile Include="MonoDevelop.Debugger\Extensions.cs" />
     <Compile Include="MonoDevelop.Debugger\AttachToProcessDialog.cs" />
-    <Compile Include="MonoDevelop.Debugger\ExceptionsDialog.cs" />
     <Compile Include="gtk-gui\MonoDevelop.Debugger.ExceptionsDialog.cs" />
     <Compile Include="gtk-gui\MonoDevelop.Debugger.AttachToProcessDialog.cs" />
     <Compile Include="MonoDevelop.Debugger\ExpressionEvaluatorDialog.cs" />

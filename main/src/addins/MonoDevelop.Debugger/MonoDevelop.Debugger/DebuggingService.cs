@@ -327,11 +327,6 @@ namespace MonoDevelop.Debugger
 				return exceptionDialog;
 			}
 		}
-
-		public static void ShowExceptionsFilters ()
-		{
-			MessageService.ShowCustomDialog (new ExceptionsDialog ());
-		}
 		
 		static void SetupSession ()
 		{

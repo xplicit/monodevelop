@@ -59,7 +59,6 @@ namespace MonoDevelop.Debugger
 		RemoveBreakpoint,
 		ShowBreakpointProperties,
 		ExpressionEvaluator,
-		SelectExceptions,
 		ShowCurrentExecutionLine,
 		AddTracepoint,
 		AddWatch,
@@ -618,19 +617,6 @@ namespace MonoDevelop.Debugger
 		{
 			info.Visible = DebuggingService.IsDebuggingSupported;
 			info.Enabled = DebuggingService.CurrentFrame != null;
-		}
-	}
-
-	class SelectExceptionsCommand: CommandHandler
-	{
-		protected override void Run ()
-		{
-			DebuggingService.ShowExceptionsFilters ();
-		}
-
-		protected override void Update (CommandInfo info)
-		{
-			info.Visible = DebuggingService.IsFeatureSupported (DebuggerFeatures.Catchpoints);
 		}
 	}
 	
