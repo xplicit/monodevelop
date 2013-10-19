@@ -137,6 +137,7 @@ namespace MonoDevelop.Debugger
 			entryFunctionName.Changed += OnUpdateText;
 			entryLocationFile.Changed += OnUpdateText;
 			entryExceptionType.Changed += OnUpdateText;
+			entryPrintExpression.Changed += OnUpdateText;
 
 			buttonOk.Clicked += OnSave;
 		}
@@ -200,10 +201,11 @@ namespace MonoDevelop.Debugger
 				ignoreHitType.SelectedItem = be.HitCountMode;
 				ignoreHitCount.Value = be.HitCount;
 
-				if (be.HitAction == HitAction.PrintExpression) {
+				if ((be.HitAction & HitAction.PrintExpression) != HitAction.None) {
 					checkPrintExpression.Active = true;
 					entryPrintExpression.Text = be.TraceExpression;
 				}
+				checkResumeExecution.Active |= (be.HitAction & HitAction.Break) == HitAction.None;
 			} else {
 				ignoreHitType.SelectedItem = HitCountMode.None;
 				conditionalHitType.SelectedItem = ConditionalHitWhen.ConditionIsTrue;
@@ -288,12 +290,13 @@ namespace MonoDevelop.Debugger
 			be.HitCountMode = (HitCountMode)ignoreHitType.SelectedItem;
 			be.HitCount = be.HitCountMode != HitCountMode.None ? (int)ignoreHitCount.Value : 0;
 
+			be.HitAction = HitAction.None;
 			if (checkPrintExpression.Active) {
-				// FIXME: Make HitAction flags.
-				be.HitAction = HitAction.PrintExpression;
+				be.HitAction |= HitAction.PrintExpression;
 				be.TraceExpression = entryPrintExpression.Text;
 			}
-			be.HitAction = HitAction.Break;
+			if (!checkResumeExecution.Active)
+				be.HitAction |= HitAction.Break;
 
 			be.CommitChanges ();
 		}
@@ -323,6 +326,7 @@ namespace MonoDevelop.Debugger
 			// Check printing an expression.
 			entryPrintExpression.Sensitive = checkPrintExpression.Active;
 			checkResumeExecution.Sensitive = checkPrintExpression.Active;
+			checkResumeExecution.Active &= checkPrintExpression.Active;
 
 			// And display warning icons
 			buttonOk.Sensitive = CheckValidity ();
