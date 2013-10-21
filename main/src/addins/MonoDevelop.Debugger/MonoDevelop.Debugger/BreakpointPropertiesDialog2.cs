@@ -31,15 +31,17 @@ using MonoDevelop.Ide;
 using System.Collections.Generic;
 using MonoDevelop.Ide.TypeSystem;
 using ICSharpCode.NRefactory.TypeSystem;
+using System.Linq;
 
 namespace MonoDevelop.Debugger
 {
-	enum ConditionalHitWhen {
+	enum ConditionalHitWhen
+	{
 		ConditionIsTrue,
 		ExpressionChanges
 	}
 
-	class BreakpointPropertiesDialog2 : Xwt.Dialog
+	sealed class BreakpointPropertiesDialog2 : Xwt.Dialog
 	{
 		// For button sensitivity.
 		Xwt.DialogButton buttonOk;
@@ -189,6 +191,10 @@ namespace MonoDevelop.Debugger
 
 		void SetInitialData ()
 		{
+			// FIXME: Add support for not doing base add
+			checkIncludeSubclass.Active = true;
+			checkIncludeSubclass.Sensitive = false;
+
 			if (be != null) {
 				stopOnException.Sensitive = false;
 				stopOnFunction.Sensitive = false;
@@ -250,15 +256,6 @@ namespace MonoDevelop.Debugger
 				bp.ConditionExpression = null;
 		}
 
-		void SaveCatchpoint (Catchpoint cp)
-		{
-			if (checkIncludeSubclass.Active) {
-				// add stuff
-			} else {
-				// remove stuff
-			}
-		}
-
 		void OnSave (object sender, EventArgs e)
 		{
 			bool isNew = false;
@@ -283,10 +280,6 @@ namespace MonoDevelop.Debugger
 			if (bp != null)
 				SaveBreakpoint (bp, isNew);
 
-			var cp = be as Catchpoint;
-			if (cp != null)
-				SaveCatchpoint (cp);
-
 			be.HitCountMode = (HitCountMode)ignoreHitType.SelectedItem;
 			be.HitCount = be.HitCountMode != HitCountMode.None ? (int)ignoreHitCount.Value : 0;
 
@@ -308,7 +301,8 @@ namespace MonoDevelop.Debugger
 			hboxLineColumn.Sensitive = stopOnLocation.Active;
 			hboxLocation.Sensitive = stopOnLocation.Active;
 			hboxException.Sensitive = stopOnException.Active;
-			checkIncludeSubclass.Sensitive = stopOnException.Active;
+			// FIXME: Add support for not doing base add
+			//checkIncludeSubclass.Sensitive = stopOnException.Active;
 			hboxCondition.Sensitive = !stopOnException.Active;
 
 			// Check conditional
@@ -334,8 +328,6 @@ namespace MonoDevelop.Debugger
 
 		void OnUpdateText (object sender, EventArgs e)
 		{
-
-
 			buttonOk.Sensitive = CheckValidity ();
 		}
 
