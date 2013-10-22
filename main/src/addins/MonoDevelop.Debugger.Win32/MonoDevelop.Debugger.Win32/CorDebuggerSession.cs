@@ -506,17 +506,26 @@ namespace MonoDevelop.Debugger.Win32
 		{
 			// Build up the exception type hierachy
 			CorValue v = e.Thread.CurrentException;
-			List<string> exceptions = new List<string>();
+			var exceptions = new HashSet<string>();
+
 			CorType t = v.ExactType;
+			string baseName = t.GetTypeInfo (this).FullName;
 			while (t != null) {
-				exceptions.Add(t.GetTypeInfo(this).FullName);
+				exceptions.Add (t.GetTypeInfo (this).FullName);
 				t = t.Base;
 			}
 			
 			// See if a catchpoint is set for this exception.
 			foreach (Catchpoint cp in Breakpoints.GetCatchpoints()) {
-				if (cp.Enabled && exceptions.Contains(cp.ExceptionName)) {
-					return true;
+				if (cp.Enabled) {
+					if (cp.IncludeSubclasses) {
+						if (exceptions.Contains (cp.ExceptionName))
+							return true;
+						continue;
+					}
+
+					if (baseName == cp.ExceptionName)
+						return true;
 				}
 			}
 			
